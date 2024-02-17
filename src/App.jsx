@@ -1,102 +1,87 @@
-import React, { useState } from 'react';
-import '.App.css'
+import React, { useState, useEffect } from 'react';
+import './App.css';
 
+const initialFriends = ['Joel', 'Ellie', 'Charles'];
 
 const App = () => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [friends, setFriends] = useState(initialFriends);
+  const [selectedFriend, setSelectedFriend] = useState(friends[0]);
+  const [friendMessages, setFriendMessages] = useState(() => {
 
+    const storedMessages = localStorage.getItem('friendMessages');
+    return storedMessages ? JSON.parse(storedMessages) : {
+      Joel: [],
+      Ellie: [],
+      Charles: []
+    };
+  });
+  const [inputValue, setInputValue] = useState('');
 
-  const handleSignUp = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    localStorage.setItem('friendMessages', JSON.stringify(friendMessages));
+  }, [friendMessages]);
 
+  const sendMessage = () => {
+    if (inputValue.trim() !== '') {
+      const newMessage = {
+        text: inputValue,
+        timestamp: Date.now()
+      };
+      setFriendMessages({
+        ...friendMessages,
+        [selectedFriend]: [...friendMessages[selectedFriend], newMessage]
+      });
 
-    if (!fullName || !email || !password || !confirmPassword) {
-      setMessage('Cannot leave any field blank!');
-      return;
+      const updatedFriends = [selectedFriend, ...friends.filter(friend => friend !== selectedFriend)];
+      setFriends(updatedFriends);
+
+      setInputValue('');
     }
-
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setMessage('Invalid email address');
-      return;
-    }
-
-
-    if (password !== confirmPassword) {
-      setMessage('Passwords do not match');
-      return;
-    }
-
-
-    setMessage('Sign up successfully!');
   };
 
+  const handleFriendClick = (friend) => {
+    setSelectedFriend(friend);
+  };
+
+  const sortedMessages = friendMessages[selectedFriend].slice();
 
   return (
-    <div className="container">
-      <form className="signup-form">
-        <div className="form-group">
-          <label htmlFor="fullName">Full Name</label>
+    <div className="chat-container">
+      <div className="friend-list">
+        {friends.map((friend, index) => (
+          <div
+            key={index}
+            className={`friend ${friend === selectedFriend ? 'active' : ''}`}
+            onClick={() => handleFriendClick(friend)}
+          >
+            {friend}
+          </div>
+        ))}
+      </div>
+      <div className="chat-box">
+        <div className="chat-list">
+          {sortedMessages.map((message, index) => (
+            <div key={index} className="message">
+              <p>{message.text}</p>
+              <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+            </div>
+          ))}
+        </div>
+        <div className="input-container">
           <input
             type="text"
-            id="fullName"
-            placeholder="Enter your full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') sendMessage();
+            }}
+            placeholder="Type your message..."
           />
+          <button onClick={sendMessage}>Send</button>
         </div>
-
-
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-
-
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-
-        <div className="form-group">
-          <label htmlFor="confirmPassword">Confirm Password</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-        </div>
-
-
-        <button type="submit" onClick={handleSignUp}>
-          Sign Up
-        </button>
-      </form>
-
-
-      {message && <div className={`message ${message.includes('successfully') ? 'success' : 'error'}`}>{message}</div>}
+      </div>
     </div>
   );
 };
-
 
 export default App;
