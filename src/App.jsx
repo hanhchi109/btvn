@@ -1,58 +1,96 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import All from "./Components/all";
+import Active from "./Components/Active";
+import Completed from "./Components/Complete";
+import './App.css'; 
 
-const instanceAxios = axios.create({
-    baseURL: "https://fakestoreapi.com/products?limit=20"
-});
+function App() {
+  const [tasks, setTasks] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState("All");
+  const [inputValue, setInputValue] = useState("");
 
-const App = () => {
-    const [products, setProducts] = useState([]);
-    const [selectedProductId, setSelectedProductId] = useState(null);
-    const [productShow, setProductShow] = useState(10);
+  useEffect(() => {
+    const storedTasks = JSON.parse(localStorage.getItem("tasks"));
+    if (storedTasks) {
+      setTasks(storedTasks);
+    }
+  }, []);
 
-    const fetchProduct = async () => {
-        try {
-            const { data } = await instanceAxios.get();
-            console.log(data);
-            setProducts(data);
-        } catch (error) {
-            console.error('Error fetching products:', error);
-        }
-    };
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
-    const handleImageClick = (productId) => {
-        setSelectedProductId(productId);
-    };
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
 
-    const showMoreProducts = () => {
-        setProductShow(prevCount => prevCount + 10);
-    };
+  const handleAddTask = () => {
+    if (inputValue.trim() !== "") {
+      setTasks([...tasks, { id: Date.now(), content: inputValue, completed: false }]);
+      setInputValue("");
+    }
+  };
 
-    return (
+  const handleToggleTask = (id) => {
+    setTasks(tasks.map((task) => {
+      if (task.id === id) {
+        return { ...task, completed: !task.completed };
+      }
+      return task;
+    }));
+  };
+
+  const handleDeleteTask = (id) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const handleDeleteAllTasks = () => {
+    setTasks([]);
+  };
+
+  let filteredTasks;
+  if (currentFilter === "All") {
+    filteredTasks = tasks;
+  } else if (currentFilter === "Active") {
+    filteredTasks = tasks.filter((task) => !task.completed);
+  } else if (currentFilter === "Completed") {
+    filteredTasks = tasks.filter((task) => task.completed);
+  }
+
+
+  return (
+    <div>
+      <h1>Todo List</h1>
+      
+      <div>
+        <button onClick={() => setCurrentFilter("All")}>All</button>
+        <button onClick={() => setCurrentFilter("Active")}>Active</button>
+        <button onClick={() => setCurrentFilter("Completed")}>Completed</button>
+      </div>
+      <div>
+        <input
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="Enter a new task"
+        />
+        <button onClick={handleAddTask}> Add Task </button>
+      </div>
+      <div>
+      {currentFilter === "All" && <All tasks={filteredTasks} handleToggleTask={handleToggleTask} handleDeleteTask={handleDeleteTask} />}
+      {currentFilter === "Active" && <Active tasks={filteredTasks} handleToggleTask={handleToggleTask} handleDeleteTask={handleDeleteTask} />}
+      {currentFilter === "Completed" && <Completed tasks={filteredTasks} handleToggleTask={handleToggleTask} handleDeleteTask={handleDeleteTask} />}
+      {tasks.length > 0 && (
         <div>
-            <div className='btn'>
-                <button onClick={fetchProduct} type='primary' id='btn'>SẢN PHẨM CỦA CỬA HÀNG CHÚNG TÔI</button>
-            </div>
-            <div className="product-container">
-                {products.slice(0, productShow).map(product => (
-                    <div key={product.id} className='product'>
-                        <img src={product.image} alt={product.title} onClick={() => handleImageClick(product.id)} />
-                        <div className='product-info'>
-                            <h3>{product.title}</h3>
-                            <p>{product.description}</p>
-                            <p>{product.category}</p>
-                            <p>Price: ${product.price}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-            {selectedProductId && <p>Selected Product ID: {selectedProductId}</p>}
-            {productShow < products.length && (
-                <button onClick={showMoreProducts}>Xem thêm</button>
-            )}
+          <button className = 'delete-btn' onClick={handleDeleteAllTasks}>Delete All Tasks</button>
         </div>
-    );
+        
+      )}
+      
+      </div>
+      
+    </div>
+  );
 }
 
 export default App;
