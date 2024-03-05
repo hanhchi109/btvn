@@ -29,7 +29,7 @@ button:hover {
   color: black;
 }
 
-.head-nav button:active {
+.button:active {
   background-color: black;
   color: white;
 }
