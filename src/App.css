@@ -29,8 +29,9 @@ button:hover {
   color: black;
 }
 
-.selected {
-  text-decoration: underline;
+.head-nav button:active {
+  background-color: black;
+  color: white;
 }
 
 input[type="text"] {
